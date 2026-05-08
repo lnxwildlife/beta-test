@@ -173,23 +173,20 @@ textarea{resize:vertical;min-height:70px}
     </div>
   </div>
   <div class="card">
-    <label class="fl"><span id="tl-cam">Meine Kamera(s)</span></label>
-    <input type="text" id="fi-cam" placeholder="z.B. Canon EOS R5" oninput="dirty=true"/>
+    <label class="fl"><span id="tl-cam">Kameramarke(n)</span></label>
+    <input type="text" id="fi-cam" placeholder="z.B. Canon, Nikon, Sony" oninput="dirty=true"/>
   </div>
   <div class="card">
     <div class="g2">
       <div><label class="fl">Instagram @</label><input type="text" id="fi-ig" placeholder="@username" oninput="dirty=true"/></div>
-      <div><label class="fl">Facebook</label><input type="text" id="fi-fb" placeholder="Profilname" oninput="dirty=true"/></div>
+      <div><label class="fl">YouTube</label><input type="text" id="fi-fb" placeholder="@channel" oninput="dirty=true"/></div>
     </div>
     <div class="mt">
-      <label class="fl"><span id="tl-social">Weitere Social Media</span></label>
-      <input type="text" id="fi-social" placeholder="YouTube, TikTok…" oninput="dirty=true"/>
+      <label class="fl"><span id="tl-social">Website</span></label>
+      <input type="text" id="fi-social" placeholder="https://www.meine-seite.ch" oninput="dirty=true"/>
     </div>
   </div>
-  <div class="card">
-    <label class="fl"><span id="tl-bat">Batterien (Marke / Typ / Kapazität)</span></label>
-    <input type="text" id="fi-bat" placeholder="z.B. Panasonic Eneloop AA 2500mAh" oninput="dirty=true"/>
-  </div>
+
   <div class="card">
     <label class="fl"><span id="tl-start">Teststart-Datum</span></label>
     <input type="text" id="fi-start" placeholder="01.05.2026" oninput="dirty=true"/>
@@ -282,8 +279,16 @@ textarea{resize:vertical;min-height:70px}
     </div>
   </div>
   <div class="card">
-    <label class="fl"><span id="tl-ci-cam">Kamera eingesetzt</span></label>
-    <input type="text" id="ci-cam" placeholder="Marke, Modell"/>
+    <div class="g2">
+      <div>
+        <label class="fl"><span id="tl-ci-cam">Kamera eingesetzt</span></label>
+        <input type="text" id="ci-cam" placeholder="Marke, Modell"/>
+      </div>
+      <div>
+        <label class="fl"><span id="tl-ci-bat">Batterien</span></label>
+        <input type="text" id="ci-bat" placeholder="z.B. Eneloop AA"/>
+      </div>
+    </div>
   </div>
   <div class="card">
     <label class="fl"><span id="tl-ci-op">Betriebsmodus</span></label>
@@ -407,7 +412,7 @@ const TX = {
     nav_p:'Profil', nav_i:'Initial', nav_c:'Check-in', nav_s:'Umfrage',
     hdr:'Beta Tester',
     tl_name:'Vorname Nachname', tl_sensor:'Sensor Nummer', tl_cam:'Meine Kamera(s)',
-    tl_social:'Weitere Social Media', tl_bat:'Batterien (Marke / Typ / Kapazität)',
+    tl_social:'Website', tl_bat:'Batterien (Marke / Typ / Kapazität)',
     tl_start:'Teststart-Datum', tl_sheet:'Google Sheet Verbindung', tl_prog:'Testfortschritt',
     tl_profil:'Profil', tl_init:'Initialcheck', tl_ci:'Check-in', tl_surv:'Abschluss-Umfrage',
     btn_save:'Profil speichern', btn_load:'↓ Meine Daten laden (Gerätwechsel)',
@@ -420,7 +425,7 @@ const TX = {
     new_ci:'Neuer Check-in', ci_hist:'Check-in Verlauf',
     ci_date:'Datum', ci_period:'Einsatz-Zeitraum', ci_cam:'Kamera eingesetzt',
     ci_op:'Betriebsmodus', ci_cap:'Aufnahmemodus',
-    ci_trg:'Auslösungen Total', ci_fls:'Fehlauslösungen',
+    ci_bat:'Batterien', ci_trg:'Auslösungen Total', ci_fls:'Fehlauslösungen',
     ci_ok:'Alles OK?', ci_bug:'Bug / Fehler?', ci_rat:'Bewertung', ci_notes:'Bemerkungen / Feedback',
     lbl_day:'Tag', lbl_night:'Nacht', lbl_mix:'Mix',
     lbl_yes:'✓ Ja', lbl_partly:'~ Teils', lbl_no:'✗ Nein',
@@ -449,7 +454,7 @@ const TX = {
     nav_p:'Profile', nav_i:'Initial', nav_c:'Check-in', nav_s:'Survey',
     hdr:'Beta Tester',
     tl_name:'First & Last Name', tl_sensor:'Sensor Number', tl_cam:'My Camera(s)',
-    tl_social:'Other Social Media', tl_bat:'Batteries (Brand / Type / Capacity)',
+    tl_social:'Website', tl_bat:'Batteries (Brand / Type / Capacity)',
     tl_start:'Test Start Date', tl_sheet:'Google Sheet Connection', tl_prog:'Test Progress',
     tl_profil:'Profile', tl_init:'Initial Check', tl_ci:'Check-in', tl_surv:'Final Survey',
     btn_save:'Save Profile', btn_load:'↓ Load My Data (Device Change)',
@@ -462,7 +467,7 @@ const TX = {
     new_ci:'New Check-in', ci_hist:'Check-in History',
     ci_date:'Date', ci_period:'Usage Period', ci_cam:'Camera Used',
     ci_op:'Operation Mode', ci_cap:'Capture Mode',
-    ci_trg:'Total Triggers', ci_fls:'False Triggers',
+    ci_bat:'Batteries', ci_trg:'Total Triggers', ci_fls:'False Triggers',
     ci_ok:'All OK?', ci_bug:'Bug / Error?', ci_rat:'Rating', ci_notes:'Notes / Feedback',
     lbl_day:'Day', lbl_night:'Night', lbl_mix:'Mix',
     lbl_yes:'✓ Yes', lbl_partly:'~ Partly', lbl_no:'✗ No',
@@ -494,7 +499,7 @@ function getItems(lang){
   const e=lang==='en';
   return [
     {s:e?'SETUP':'SETUP'},
-    {n:1,t:e?'Note Batteries':'Batterien notieren',d:e?'Note brand, type and capacity in remarks.':'Marke, Typ, Kapazität in Bemerkungen eintragen.',c:e?'→ Remarks':'→ Bemerkungen'},
+
     {n:2,t:e?'Connect Wi-Fi':'WLAN verbinden',d:e?'Power on → connect to LNX-Config → open http://192.168.4.1':'Einschalten → WLAN LNX-Config → Browser → http://192.168.4.1',c:''},
     {n:3,t:e?'Check Firmware Version':'Firmware Version prüfen',d:e?'Verify V2.0.08 in web interface under «Update».':'V2.0.08 im Webinterface unter «Update» prüfen.',c:'V2.0.08'},
     {s:e?'OPERATION MODE':'OPERATION MODE'},
@@ -654,7 +659,7 @@ function restoreProfile(){
   if(!p)return;
   const f={'fi-name':'name','fi-sensor':'sensor','fi-cam':'camera',
     'fi-ig':'instagram','fi-fb':'facebook','fi-social':'social',
-    'fi-bat':'battery','fi-start':'startdate','fi-url':'sheetUrl'};
+    'fi-start':'startdate','fi-url':'sheetUrl'};
   Object.entries(f).forEach(([id,key])=>{
     const el=document.getElementById(id);
     if(el&&p[key])el.value=p[key];
@@ -760,7 +765,7 @@ function setTodayDate(){
 function saveCi(){
   const date=gv('ci-date');
   if(!date){toast(t('t_no_date'));return;}
-  const ci={id:Date.now(),date,period:gv('ci-period'),camera:gv('ci-cam'),
+  const ci={id:Date.now(),date,period:gv('ci-period'),camera:gv('ci-cam'),battery:gv('ci-bat'),
     opmode:gr('op'),capmode:gr('cap'),triggers:gv('ci-trg'),falseTriggers:gv('ci-fls'),
     ok:gr('ok'),bug:gr('bug'),rating:gr('rat'),notes:gv('ci-notes'),
     ts:new Date().toISOString()};
@@ -771,7 +776,7 @@ function saveCi(){
 }
 
 function resetCiForm(){
-  ['ci-date','ci-period','ci-cam','ci-trg','ci-fls','ci-notes'].forEach(id=>{
+  ['ci-date','ci-period','ci-cam','ci-bat','ci-trg','ci-fls','ci-notes'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   document.querySelectorAll('[name=op],[name=cap],[name=ok],[name=bug],[name=rat]')
@@ -803,6 +808,7 @@ function renderCiHist(){
       </div>
       <div class="hcm">
         ${ci.camera?`<span class="chip">📷 ${ci.camera}</span>`:''}
+        ${ci.battery?`<span class="chip">🔋 ${ci.battery}</span>`:''}
         ${ci.opmode?`<span class="chip">${ci.opmode}</span>`:''}
         ${ci.capmode?`<span class="chip">${ci.capmode}</span>`:''}
         ${trigs}
