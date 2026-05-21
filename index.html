@@ -168,12 +168,12 @@ textarea{resize:vertical;min-height:70px}
       </div>
       <div>
         <label class="fl"><span id="tl-sensor">Sensor Nummer</span> <span style="color:var(--err)">*</span></label>
-        <input type="text" id="fi-sensor" placeholder="LNX-001" oninput="dirty=true" style="border-color:var(--g);font-weight:700"/>
+        <input type="text" id="fi-sensor" placeholder="LNX-PIR-V2-000001" oninput="dirty=true" style="border-color:var(--g);font-weight:700"/>
       </div>
     </div>
   </div>
   <div class="card">
-    <label class="fl"><span id="tl-cam">Kameramarke(n)</span></label>
+    <label class="fl"><span id="tl-cam">Meine Kameramarke(n)</span></label>
     <input type="text" id="fi-cam" placeholder="z.B. Canon, Nikon, Sony" oninput="dirty=true"/>
   </div>
   <div class="card">
@@ -285,7 +285,7 @@ textarea{resize:vertical;min-height:70px}
         <input type="text" id="ci-cam" placeholder="Marke, Modell"/>
       </div>
       <div>
-        <label class="fl"><span id="tl-ci-bat">Batterien</span></label>
+        <label class="fl"><span id="tl-ci-bat">Verwendete Batterien Sensor</span></label>
         <input type="text" id="ci-bat" placeholder="z.B. Eneloop AA"/>
       </div>
     </div>
@@ -403,8 +403,8 @@ textarea{resize:vertical;min-height:70px}
 // ─── CONFIG ───────────────────────────────────────────────
 const STORE = 'lnx_v2';
 const PRESET_URL = '';
-const INIT_COUNT = 26;
-const SURV_COUNT = 23;
+const INIT_COUNT = 19;
+const SURV_COUNT = 18;
 
 // ─── TRANSLATIONS ──────────────────────────────────────────
 const TX = {
@@ -425,7 +425,7 @@ const TX = {
     new_ci:'Neuer Check-in', ci_hist:'Check-in Verlauf',
     ci_date:'Datum', ci_period:'Einsatz-Zeitraum', ci_cam:'Kamera eingesetzt',
     ci_op:'Betriebsmodus', ci_cap:'Aufnahmemodus',
-    ci_bat:'Batterien', ci_trg:'Auslösungen Total', ci_fls:'Fehlauslösungen',
+    ci_bat:'Batteries used in Sensor', ci_trg:'Auslösungen Total', ci_fls:'Fehlauslösungen',
     ci_ok:'Alles OK?', ci_bug:'Bug / Fehler?', ci_rat:'Bewertung', ci_notes:'Bemerkungen / Feedback',
     lbl_day:'Tag', lbl_night:'Nacht', lbl_mix:'Mix',
     lbl_yes:'✓ Ja', lbl_partly:'~ Teils', lbl_no:'✗ Nein',
@@ -442,7 +442,7 @@ const TX = {
     t_testing:'Verbindung wird geprüft…', t_surv_ok:'Umfrage gespeichert ✓',
     t_del:'Check-in löschen?', del_btn:'Löschen',
     r_pass:'✓ Bestanden', r_fail:'✗ Fehlgeschlagen', r_skip:'○ Nicht möglich', r_empty:'— Nicht getestet —',
-    note_ph:'Bemerkung / Batterie-Info…',
+    note_ph:'Bemerkungen…',
     chip_ok:'✓ Alles OK', chip_partly:'~ Teilweise', chip_prob:'✗ Probleme', chip_bug:'Bug gemeldet',
     empty_hist:'Noch keine Check-ins',
     ios_nudge:'📱 Safari-Menü → «Zum Home-Bildschirm» für App-Erlebnis',
@@ -467,7 +467,7 @@ const TX = {
     new_ci:'New Check-in', ci_hist:'Check-in History',
     ci_date:'Date', ci_period:'Usage Period', ci_cam:'Camera Used',
     ci_op:'Operation Mode', ci_cap:'Capture Mode',
-    ci_bat:'Batteries', ci_trg:'Total Triggers', ci_fls:'False Triggers',
+    ci_bat:'Batteries used in Sensor', ci_bat_hint:'Camera batteries do not need to be entered.', ci_trg:'Total Triggers', ci_fls:'False Triggers',
     ci_ok:'All OK?', ci_bug:'Bug / Error?', ci_rat:'Rating', ci_notes:'Notes / Feedback',
     lbl_day:'Day', lbl_night:'Night', lbl_mix:'Mix',
     lbl_yes:'✓ Yes', lbl_partly:'~ Partly', lbl_no:'✗ No',
@@ -484,7 +484,7 @@ const TX = {
     t_testing:'Testing connection…', t_surv_ok:'Survey saved ✓',
     t_del:'Delete this check-in?', del_btn:'Delete',
     r_pass:'✓ Passed', r_fail:'✗ Failed', r_skip:'○ Not possible', r_empty:'— Not tested —',
-    note_ph:'Note / Battery info…',
+    note_ph:'Remarks…',
     chip_ok:'✓ All OK', chip_partly:'~ Partly', chip_prob:'✗ Issues', chip_bug:'Bug reported',
     empty_hist:'No check-ins yet',
     ios_nudge:'📱 Safari menu → «Add to Home Screen» for app experience',
@@ -497,79 +497,145 @@ const TX = {
 // ─── INIT ITEMS ────────────────────────────────────────────
 function getItems(lang){
   const e=lang==='en';
+  const cds_note = e ? 'The sensor measures current light using its built-in CDS light sensor. If the measured value is ABOVE your set threshold → Day mode. If BELOW → Night mode. The mode depends entirely on actual light at the location — NOT on time of day! Example: a cloudy winter day may be detected as Night; a bright full-moon hillside as Day.' : 'Der Sensor misst das aktuelle Licht mit dem eingebauten CDS-Lichtsensor. Liegt der gemessene Wert ÜBER dem eingestellten Schwellenwert → Tagmodus. Liegt er DARUNTER → Nachtmodus. Der Modus hängt also nicht von der Uhrzeit ab, sondern ausschliesslich vom Licht am Standort! Zum Beispiel: Ein bewölkter Wintertag kann als Nacht erkannt werden, ein heller Vollmondhang als Tag.';
   return [
     {s:e?'SETUP':'SETUP'},
+    {n:1,t:e?'Connect Wi-Fi':'WLAN verbinden',
+     d:e?'Power on sensor → connect to LNX-Config Wi-Fi → open browser → http://192.168.4.1 — All further steps require a working Wi-Fi connection. If this step fails, mark all others as Not possible.'
+       :'Sensor einschalten → WLAN LNX-Config verbinden → Browser → http://192.168.4.1 — Alle weiteren Schritte setzen eine funktionierende WLAN-Verbindung voraus. Falls dieser Schritt fehlschlägt, alle anderen als Nicht möglich markieren.',
+     c:'http://192.168.4.1'},
 
-    {n:2,t:e?'Connect Wi-Fi':'WLAN verbinden',d:e?'Power on → connect to LNX-Config → open http://192.168.4.1':'Einschalten → WLAN LNX-Config → Browser → http://192.168.4.1',c:''},
-    {n:3,t:e?'Check Firmware Version':'Firmware Version prüfen',d:e?'Verify V2.0.08 in web interface under «Update».':'V2.0.08 im Webinterface unter «Update» prüfen.',c:'V2.0.08'},
     {s:e?'OPERATION MODE':'OPERATION MODE'},
-    {n:4,t:'24-Hour Cycle',d:e?'Set to «24-Hour Cycle» → Start. Triggers day and night.':'24-Hour Cycle → Start. Löst Tag und Nacht aus.',c:'24-Hour Cycle'},
-    {n:5,t:'Day Only',d:e?'Set to «Daylight Only». Triggers during day only.':'Daylight Only. Tagsüber auslösen, nachts nicht.',c:'Daylight Only'},
-    {n:6,t:'Night Only',d:e?'Set to «Night Only». Triggers at night only.':'Night Only. Nachts auslösen, tagsüber nicht.',c:'Night Only'},
-    {n:7,t:e?'Dusk':'Dusk (Dämmerung)',d:e?'Night Only + Dusk. Should also trigger at dusk.':'Night Only + Dusk. Auch in der Abenddämmerung auslösen.',c:'Night Only + Dusk'},
-    {n:8,t:e?'Dawn':'Dawn (Morgengrauen)',d:e?'Day Only + Dawn. Should also trigger at dawn.':'Day Only + Dawn. Auch im Morgengrauen auslösen.',c:'Day Only + Dawn'},
-    {n:9,t:e?'CDS Threshold':'CDS Threshold anpassen',d:e?'Adjust light sensor slider, verify day/night detection.':'Lichtsensor-Schieber verstellen, Tag/Nacht-Erkennung prüfen.',c:e?'Note CDS value':'CDS-Wert notieren'},
+    {n:2,t:e?'24-Hour Cycle':'24-Hour Cycle',
+     d:e?'Set mode to «24-Hour Cycle» → Start. Sensor triggers on movement 24 hours a day. Test with 2–3 different Capture Modes (e.g. Single and Burst) and note which you used.'
+       :'Mode auf «24-Hour Cycle» → Start. Sensor löst rund um die Uhr aus. Mit 2–3 verschiedenen Capture Modes testen (z.B. Single und Burst) und jeweils notieren welcher verwendet wurde.',
+     c:e?'e.g. Single 3 Shots, then Burst 2s':'z.B. Single 3 Shots, dann Burst 2s'},
+    {n:3,t:e?'Day Only — ⚠ Read first':'Day Only — ⚠ Zuerst lesen',
+     d:e?'IMPORTANT: «Day» does NOT mean daytime by the clock. The sensor uses its CDS light sensor and your set threshold value to decide: light ABOVE threshold = Day (triggers), light BELOW = Night (silent). '+cds_note+' → Set to «Daylight Only», test in current light conditions and note the active Capture Mode.'
+       :'WICHTIG: «Tag» bedeutet NICHT Tageszeit nach Uhr. Der Sensor nutzt seinen CDS-Lichtsensor und den eingestellten Schwellenwert: Licht ÜBER Schwellenwert = Tag (löst aus), Licht DARUNTER = Nacht (stumm). '+cds_note+' → Auf «Daylight Only» setzen, bei aktuellem Licht testen, aktiven Capture Mode notieren.',
+     c:e?'Daylight Only + note Capture Mode':'Daylight Only + Capture Mode notieren'},
+    {n:4,t:e?'Night Only — ⚠ Read first':'Night Only — ⚠ Zuerst lesen',
+     d:e?'Same logic as Day Only — reversed: light BELOW threshold = Night (triggers). '+cds_note+' → Set to «Night Only», test in darkness or by covering the sensor, note Capture Mode.'
+       :'Gleiche Logik wie Day Only — umgekehrt: Licht UNTER Schwellenwert = Nacht (löst aus). '+cds_note+' → Auf «Night Only» setzen, bei Dunkelheit oder abgedecktem Sensor testen, Capture Mode notieren.',
+     c:e?'Night Only + note Capture Mode':'Night Only + Capture Mode notieren'},
+    {n:5,t:e?'Day/Night Different — ⚠ Read first':'Day/Night Different — ⚠ Zuerst lesen',
+     d:e?'The sensor uses the same CDS light logic as Day/Night Only. '+cds_note+' Separate Capture Mode, Shots/Delay, Burst duration, Video length and Recovery Time can be set for Day and Night independently. → Set to «Day/Night Different», configure different settings for day and night, test both conditions.'
+       :'Gleiche CDS-Lichtlogik wie Day/Night Only. '+cds_note+' Capture Mode, Shots/Delay, Burst-Dauer, Videolänge und Recovery Time können für Tag und Nacht unabhängig eingestellt werden. → Auf «Day/Night Different» setzen, unterschiedliche Tag/Nacht-Einstellungen konfigurieren, beide Bedingungen testen.',
+     c:e?'Different + separate day & night Capture Modes':'Different + separate Tag/Nacht Capture Modes'},
+    {n:6,t:e?'Dusk':'Dusk (Dämmerung)',
+     d:e?'Enable «Dusk» in addition to Night Only. The sensor extends its active period into the evening twilight phase. Note: the exact timing depends on your CDS threshold and local light conditions.'
+       :'Zusätzlich zu Night Only «Dusk» aktivieren. Der Sensor verlängert seine aktive Phase in die Abenddämmerung. Hinweis: Der genaue Zeitpunkt hängt vom CDS-Schwellenwert und den lokalen Lichtverhältnissen ab.',
+     c:'Night Only + Dusk'},
+    {n:7,t:e?'Dawn':'Dawn (Morgengrauen)',
+     d:e?'Enable «Dawn» in addition to Day Only. The sensor extends into the morning twilight phase. Same note as Dusk: depends on CDS threshold and local light.'
+       :'Zusätzlich zu Day Only «Dawn» aktivieren. Der Sensor verlängert seine Phase in das Morgengrauen. Gleicher Hinweis wie Dusk: abhängig vom CDS-Schwellenwert.',
+     c:'Day Only + Dawn'},
+    {n:8,t:e?'CDS Threshold':'CDS Threshold anpassen',
+     d:e?'Adjust the light sensor slider in the web interface. The value (0–4096) defines the boundary between Day and Night. Higher value = more light needed to be considered Day. Test different values and observe how the sensor switches modes.'
+       :'Lichtsensor-Schieber im Webinterface verstellen. Der Wert (0–4096) definiert die Grenze zwischen Tag und Nacht. Höherer Wert = mehr Licht nötig um als Tag zu gelten. Verschiedene Werte testen und Moduswechsel beobachten.',
+     c:e?'Note CDS value used':'Eingestellten CDS-Wert notieren'},
+
     {s:'WAKE UP'},
-    {n:10,t:e?'Wake Up Off':'Wake Up deaktiviert',d:e?'Wake Up off. Camera triggers directly.':'Wake Up aus. Kamera wird direkt ausgelöst.',c:e?'Off':'Aus'},
-    {n:11,t:e?'Wake Up On':'Wake Up aktiviert',d:e?'Enable Wake Up, e.g. 500 ms. Camera/flash wakes up first.':'Wake Up ein, z.B. 500 ms. Kamera/Blitz wird aufgeweckt.',c:'500 ms'},
-    {n:12,t:e?'Wake Up Only (NEW V2.0.08)':'Wake Up Only (NEU V2.0.08)',d:e?'Wake Up + Only on. Focus impulse only — NO shutter, NO image.':'Wake Up + Only ein. Nur Fokus-Impuls, kein Auslöser, kein Bild.',c:'Wake Up + Only: On'},
+    {n:9,t:e?'Wake Up Off':'Wake Up deaktiviert',
+     d:e?'Wake Up disabled. Camera triggers immediately on PIR detection. Note Capture Mode used.'
+       :'Wake Up aus. Kamera löst sofort bei PIR-Erkennung aus. Capture Mode notieren.',
+     c:e?'Off + note Capture Mode':'Aus + Capture Mode notieren'},
+    {n:10,t:e?'Wake Up On':'Wake Up aktiviert',
+     d:e?'Enable Wake Up, set time e.g. 500 ms. Camera/flash receives a focus impulse first, then the shutter triggers after the set delay. Useful for cameras/flashes that go into standby. Note Capture Mode.'
+       :'Wake Up ein, Zeit z.B. 500 ms. Kamera/Blitz erhält erst einen Fokus-Impuls, dann nach der eingestellten Zeit den Auslöser. Nützlich für Kameras/Blitze die in Standby gehen. Capture Mode notieren.',
+     c:e?'500 ms + note Capture Mode':'500 ms + Capture Mode notieren'},
+    {n:11,t:'Wake Up Only',
+     d:e?'Wake Up + «Wake Up Only» enabled. Sensor sends ONLY the focus/half-press impulse — NO shutter release, NO image taken. Useful when one LNX sensor is used to wake the camera and a second LNX sensor handles the actual trigger as quickly and precisely as possible.'
+       :'Wake Up + «Wake Up Only» aktiv. Sensor sendet NUR den Fokus/Halbdruck-Impuls — KEIN Auslöser, KEIN Bild. Nützlich wenn ein LNX Sensor verwendet wird um die Kamera aufzuwecken und ein 2ter LNX Sensor die wirkliche Auslösung so rasch und präzise wie möglich macht.',
+     c:e?'Wake Up + Only: On':'Wake Up + Only: Ein'},
+
     {s:e?'CAPTURE MODE – STANDARD':'CAPTURE MODE – STANDARD'},
-    {n:13,t:e?'Photo Single – 1 Shot':'Photo Single – 1 Bild',d:e?'PhotoSingle, 1 Shot. Sensor triggers once.':'PhotoSingle, 1 Shot. Sensor löst 1× aus.',c:'1 Shot'},
-    {n:14,t:e?'Photo Single – Multiple':'Photo Single – Mehrere Bilder',d:e?'3 Shots, Delay 1000 ms. 3 consecutive images.':'3 Shots, Delay 1000 ms. 3 Bilder in Folge.',c:'3 Shots / 1000 ms'},
-    {n:15,t:e?'Photo Burst':'Photo Burst',d:e?'Burst mode, e.g. 2000 ms. Camera shoots bursts for 2s.':'Burst-Modus, z.B. 2000 ms. Serienbilder für 2s.',c:'2000 ms'},
-    {n:16,t:'Video',d:e?'Video mode, e.g. 10 s. Camera starts and stops automatically.':'Video-Modus, z.B. 10 s. Kamera startet und stoppt automatisch.',c:'10 s'},
-    {n:17,t:e?'Recovery Time':'Recovery Time',d:e?'Set to 5 s. Sensor waits 5s before re-arming.':'5 s einstellen. Sensor wartet 5s vor erneutem Auslösen.',c:'5 s'},
-    {s:e?'DAY / NIGHT DIFFERENT (NEW V2.0.08)':'DAY / NIGHT DIFFERENT (NEU V2.0.08)'},
-    {n:18,t:e?'Enable Different Mode':'Different Mode aktivieren',d:e?'Set Operation Mode to «Day / Night Different». Separate day/night settings appear.':'Mode auf «Day / Night Different». Separate Tag/Nacht-Einstellungen.',c:'Different'},
-    {n:19,t:e?'Configure Day Parameters':'Tag-Parameter konfigurieren',d:e?'Set Capture Mode, Shots/Delay and Recovery Time for day.':'Capture Mode, Shots/Delay und Recovery Time für Tagbetrieb.',c:e?'e.g. Single 3/RT 8s':'z.B. Single 3/RT 8s'},
-    {n:20,t:e?'Configure Night Parameters':'Nacht-Parameter konfigurieren',d:e?'Separate capture settings and Recovery Time for night.':'Separate Einstellungen und Recovery Time für Nachtbetrieb.',c:e?'e.g. Single 2/RT 12s':'z.B. Single 2/RT 12s'},
-    {n:21,t:e?'Test Day Trigger':'Auslösung Tag prüfen',d:e?'Trigger in daylight: day parameters must be active.':'Bei Tageslicht auslösen: Tag-Parameter müssen aktiv sein.',c:e?'Daylight':'Tageslicht'},
-    {n:22,t:e?'Test Night Trigger':'Auslösung Nacht prüfen',d:e?'Trigger in darkness: night parameters must be active.':'Bei Dunkelheit auslösen: Nacht-Parameter müssen aktiv sein.',c:e?'Darkness':'Dunkelheit'},
-    {s:'STORM PROTECTION'},
-    {n:23,t:e?'Enable Storm Protection':'Storm Protection aktivieren',d:e?'Enable, 5 triggers/min, sleep 10 min. Trigger rapidly → should sleep.':'Aktivieren, 5 Trigger/min, Schlaf 10 min. Mehrfach auslösen → Schlaf.',c:'5/10 min'},
-    {n:24,t:e?'Disable Storm Protection':'Storm Protection deaktivieren',d:e?'Disable, verify normal operation.':'Ausschalten, Normalbetrieb prüfen.',c:e?'Off':'Aus'},
+    {n:12,t:e?'Photo Single – 1 Shot':'Photo Single – 1 Bild',
+     d:e?'Set PhotoSingle, 1 Shot. Sensor triggers the shutter once per PIR detection.'
+       :'PhotoSingle, 1 Shot. Sensor löst den Auslöser einmal pro PIR-Erkennung.',c:'1 Shot'},
+    {n:13,t:e?'Photo Single – Multiple Shots':'Photo Single – Mehrere Bilder',
+     d:e?'Set 3 Shots with e.g. 1000 ms Delay. Camera takes 3 images in sequence with the set pause between them.'
+       :'3 Shots, Delay z.B. 1000 ms. Kamera nimmt 3 Bilder in Folge mit der eingestellten Pause.',c:'3 Shots / 1000 ms'},
+    {n:14,t:e?'Photo Burst':'Photo Burst',
+     d:e?'Burst mode, e.g. 2000 ms. Camera shoots a continuous burst for the set duration.'
+       :'Burst-Modus, z.B. 2000 ms. Kamera schiesst Serienbilder für die eingestellte Dauer.',c:'2000 ms'},
+    {n:15,t:e?'Video':'Video',
+     d:e?'Video mode, e.g. 10 s. Sensor presses shutter once to start recording, then again to stop after the set duration. Camera must be in video mode.'
+       :'Video-Modus, z.B. 10 s. Sensor drückt Auslöser einmal zum Starten, dann nochmals zum Stoppen. Kamera muss im Video-Modus sein.',c:'10 s'},
+    {n:16,t:e?'Recovery Time':'Recovery Time',
+     d:e?'Set Recovery Time to e.g. 5 s. After each trigger the sensor waits this duration before re-arming. Prevents rapid re-triggering by slow-moving subjects.'
+       :'Recovery Time z.B. 5 s. Nach jeder Auslösung wartet der Sensor diese Zeit bevor er wieder scharf schaltet. Verhindert schnelles Wiederauslösen durch langsam bewegende Motive.',c:'5 s'},
+
+    {s:e?'ENVIRONMENTAL FAILSAFE (Storm Protection)':'ENVIRONMENTAL FAILSAFE (Storm Protection)'},
+    {n:17,t:e?'Enable Environmental Failsafe':'Environmental Failsafe aktivieren',
+     d:e?'Enable, set threshold e.g. 5 triggers/min, sleep e.g. 10 min. Trigger the sensor rapidly multiple times → it should enter sleep mode. Protects battery from continuous triggering by wind, insects or rain.'
+       :'Aktivieren, Schwellenwert z.B. 5 Trigger/min, Schlaf z.B. 10 min. Sensor mehrfach schnell auslösen → soll in Schlafmodus gehen. Schützt den Akku vor Dauerauslösung durch Wind, Insekten oder Regen.',c:'5/10 min'},
+    {n:18,t:e?'Disable Environmental Failsafe':'Environmental Failsafe deaktivieren',
+     d:e?'Disable Environmental Failsafe and verify normal trigger behaviour resumes.'
+       :'Environmental Failsafe deaktivieren und prüfen ob normaler Betrieb wieder aktiv ist.',c:e?'Off':'Aus'},
+
     {s:'WALK TEST'},
-    {n:25,t:'Walk Test Mode',d:e?'Enable Walk Test. Walk in front: LED blinks, NO camera trigger.':'Walk Test ein. LED blinkt bei Bewegung, kein Kameraauslöser.',c:e?'On':'Ein'},
-    {s:e?'FIRMWARE UPDATE (OTA)':'FIRMWARE UPDATE (OTA)'},
-    {n:26,t:'OTA Firmware Update',d:e?'(Optional) Upload new .bin firmware → should complete successfully.':'(Optional) Neue .bin Firmware → Update soll erfolgreich abschliessen.',c:'.bin'},
+    {n:19,t:e?'Walk Test Mode':'Walk Test Mode',
+     d:e?'Enable Walk Test. Walk in front of the sensor: the LED should blink on each PIR detection. No shutter is triggered. Use this to find the optimal sensor position and PIR coverage angle.'
+       :'Walk Test einschalten. Vor Sensor bewegen: LED blinkt bei jeder PIR-Erkennung. Kein Auslöser wird betätigt. Damit optimale Position und PIR-Erfassungswinkel ermitteln.',c:e?'On':'Ein'},
   ];
 }
 
-// ─── SURVEY ITEMS ──────────────────────────────────────────
 function getSurv(lang){
   const e=lang==='en';
   return [
     {s:e?'GENERAL':'ALLGEMEIN'},
-    {n:1,q:e?'How important is easy operation (web interface)?':'Wie wichtig ist dir eine einfache Bedienung (Webinterface)?',tp:'r'},
-    {n:2,q:e?'How important is a short reaction time after PIR trigger?':'Wie wichtig ist dir eine kurze Reaktionszeit nach PIR-Auslösung?',tp:'r'},
-    {n:3,q:e?'How important is battery life / energy efficiency?':'Wie wichtig ist dir die Akkulaufzeit / Energieeffizienz?',tp:'r'},
-    {n:4,q:e?'How important is weather resistance (rain, cold)?':'Wie wichtig ist dir Wetterfestigkeit (Regen, Kälte)?',tp:'r'},
-    {n:5,q:e?'How important is compatibility with different camera brands?':'Wie wichtig ist dir die Kompatibilität mit verschiedenen Kameramarken?',tp:'r'},
+    {n:1, q:e?'How important is easy operation to you?'
+             :'Wie wichtig ist dir eine einfache Bedienung?', tp:'r'},
+    {n:2, q:e?'How do you rate the operation of the LNX sensor?'
+             :'Wie bewertest du die Bedienung des LNX Sensors?', tp:'r'},
+    {n:3, q:e?'How do you rate the reaction time of the LNX sensor?'
+             :'Wie beurteilst du die Reaktionszeit des LNX Sensors?', tp:'rt',
+     hint:e?'Your answer…':'Deine Antwort…'},
+    {n:4, q:e?'How important is battery life to you?'
+             :'Wie wichtig ist dir die Akkulaufzeit?', tp:'r'},
+
     {s:e?'CAPTURE MODES':'AUFNAHMEMODI'},
-    {n:6,q:e?'How important is Photo Single mode?':'Wie wichtig ist dir der Photo-Single-Modus?',tp:'r'},
-    {n:7,q:e?'How important is Burst mode?':'Wie wichtig ist dir der Burst-Modus?',tp:'r'},
-    {n:8,q:e?'How important is Video mode?':'Wie wichtig ist dir der Video-Modus?',tp:'r'},
-    {n:9,q:e?'How important is adjustable Recovery Time?':'Wie wichtig ist dir eine einstellbare Recovery Time?',tp:'r'},
+    {n:5, q:e?'Do the available capture modes (Single, Burst, Video) cover all your needs? How do you rate them?'
+             :'Decken die verfügbaren Aufnahmemodi (Single, Burst, Video) alle deine Bedürfnisse ab? Wie bewertest du diese?', tp:'r'},
+    {n:6, q:e?'What capture modes or features are missing for your use case?'
+             :'Welche Aufnahmemodi oder Funktionen fehlen dir für deinen Einsatz?', tp:'t'},
+
     {s:e?'DAY / NIGHT FUNCTIONS':'TAG / NACHT FUNKTIONEN'},
-    {n:10,q:e?'How important is Day-Only / Night-Only?':'Wie wichtig ist dir die Day-Only / Night-Only-Funktion?',tp:'r'},
-    {n:11,q:e?'How important is dusk/dawn detection?':'Wie wichtig ist dir die Dämmerungs-Erkennung (Dusk/Dawn)?',tp:'r'},
-    {n:12,q:e?'How important is a manual CDS threshold?':'Wie wichtig ist dir ein manuell einstellbarer CDS-Schwellenwert?',tp:'r'},
-    {n:13,q:e?'How important is the Day/Night Different mode (V2.0.08)?':'Wie wichtig ist dir der Day/Night-Different-Modus (V2.0.08)?',tp:'r'},
+    {n:7, q:e?'How important is it to have a light threshold setting that controls when the sensor triggers?'
+             :'Wie wichtig ist dir die Möglichkeit, einen Lichtschwellenwert einzustellen, der die Auslösung steuert?', tp:'r'},
+    {n:8, q:e?'How important is the Day/Night Different mode (separate settings for day and night)?'
+             :'Wie wichtig ist dir der Day/Night-Different-Modus (separate Einstellungen für Tag und Nacht)?', tp:'r'},
+    {n:9, q:e?'How important is dusk/dawn detection to you?'
+             :'Wie wichtig ist dir die Dämmerungs-Erkennung (Dusk/Dawn)?', tp:'r'},
+
     {s:e?'PROTECTION & EXTRAS':'SCHUTZFUNKTIONEN & EXTRAS'},
-    {n:14,q:e?'How important is Storm Protection?':'Wie wichtig ist dir die Storm Protection?',tp:'r'},
-    {n:15,q:e?'How important is Walk Test mode?':'Wie wichtig ist dir der Walk-Test-Modus?',tp:'r'},
-    {n:16,q:e?'How important is OTA firmware update?':'Wie wichtig ist dir OTA-Firmware-Update?',tp:'r'},
-    {n:17,q:e?'How important is the Wake-Up function?':'Wie wichtig ist dir die Wake-Up-Funktion?',tp:'r'},
-    {n:18,q:e?'How important is Wake Up Only?':'Wie wichtig ist dir Wake Up Only?',tp:'r'},
-    {s:e?'DESIGN & HARDWARE':'DESIGN & HARDWARE'},
-    {n:19,q:e?'How important is a compact housing?':'Wie wichtig ist dir ein kompaktes Gehäuse?',tp:'r'},
-    {n:20,q:e?'How important is mounting flexibility?':'Wie wichtig ist dir die Montage-Flexibilität?',tp:'r'},
-    {s:e?'OPEN QUESTIONS':'OFFENE FRAGEN'},
-    {n:21,q:e?'What was missing? What would you add?':'Was fehlte dir? Was würdest du hinzufügen?',tp:'t'},
-    {n:22,q:e?'Which camera systems do you primarily use?':'Welche Kamerasysteme setzt du primär ein?',tp:'t'},
-    {n:23,q:e?'Would you recommend the sensor? Overall verdict?':'Würdest du den Sensor weiterempfehlen und was ist dein Gesamtfazit?',tp:'t'},
+    {n:10,q:e?'How important is the Environmental Failsafe (protects against continuous triggering by wind/insects/rain)?'
+             :'Wie wichtig ist dir der Environmental Failsafe (Schutz vor Dauerauslösung durch Wind/Insekten/Regen)?', tp:'r'},
+    {n:11,q:e?'How important is the Walk Test mode for positioning the sensor?'
+             :'Wie wichtig ist dir der Walk-Test-Modus zur Positionierung des Sensors?', tp:'r'},
+    {n:12,q:e?'How important is the Wake-Up function (waking camera/flash from standby before trigger)?'
+             :'Wie wichtig ist dir die Wake-Up-Funktion (Kamera/Blitz vor Auslösung aus Standby wecken)?', tp:'r'},
+    {n:13,q:e?'How important is Wake Up Only (one LNX wakes the camera, a second triggers)?'
+             :'Wie wichtig ist dir Wake Up Only (ein LNX weckt die Kamera, ein 2ter löst aus)?', tp:'r'},
+
+    {s:e?'HARDWARE':'HARDWARE'},
+    {n:14,q:e?'How do you rate the housing overall (build quality, size, weather resistance, usability)?'
+             :'Wie bewertest du das Gehäuse insgesamt (Verarbeitungsqualität, Grösse, Wetterfestigkeit, Handhabung)?', tp:'rt',
+     hint:e?'Your answer…':'Deine Antwort…'},
+    {n:15,q:e?'How important is mounting flexibility (tripod, tree)?'
+             :'Wie wichtig ist dir die Montage-Flexibilität (Stativ, Baum)?', tp:'r'},
+
+    {s:e?'OVERALL VERDICT':'GESAMTFAZIT'},
+    {n:16,q:e?'What is missing? What would you add or change?'
+             :'Was fehlt dir? Was würdest du hinzufügen oder ändern?', tp:'t'},
+    {n:17,q:e?'Would you recommend the LNX sensor?'
+             :'Würdest du den LNX Sensor weiterempfehlen?', tp:'r'},
+    {n:18,q:e?'Your overall verdict on the LNX sensor:'
+             :'Dein Gesamtfazit zum LNX Sensor:', tp:'t'},
   ];
 }
+
 
 // ─── STATE ──────────────────────────────────────────────────
 let DB={profil:{},initcheck:{},checkins:[],survey:{}};
@@ -731,6 +797,16 @@ function renderInitList(){
       </div>`;
     el.appendChild(div);
   });
+  // Apply WLAN-disabled state if already failed
+  const wlan=DB.initcheck[1];
+  if(wlan&&(wlan.result==='Failed'||wlan.result==='Not possible')){
+    getItems(lang).filter(i=>i.n&&i.n>1).forEach(item=>{
+      const s=document.querySelector('#ii-'+item.n+' .rs');
+      const inp=document.querySelector('#ii-'+item.n+' input[type=text]');
+      if(s)s.disabled=true;
+      if(inp)inp.disabled=true;
+    });
+  }
 }
 
 function rcls(r){
@@ -743,11 +819,38 @@ function rcls(r){
 function saveIR(n,val){
   if(!DB.initcheck[n])DB.initcheck[n]={};
   DB.initcheck[n].result=val;
+  const ok=val==='Passed';
+  const updateNum=(num,v,i)=>{if(num){num.className='cin'+(v==='Passed'?' done':'');num.textContent=v==='Passed'?'✓':i;}};
   const num=document.getElementById('cin-'+n);
   const sel=document.querySelector('#ii-'+n+' .rs');
-  const ok=val==='Passed';
-  if(num){num.className='cin'+(ok?' done':'');num.textContent=ok?'✓':n;}
+  updateNum(num,val,n);
   if(sel)sel.className='rs '+rcls(val);
+  // WLAN dependency: if item 1 fails, disable and auto-set all others
+  if(n===1&&(val==='Failed'||val==='Not possible')){
+    const items=getItems(lang).filter(i=>i.n&&i.n>1);
+    items.forEach(item=>{
+      if(!DB.initcheck[item.n])DB.initcheck[item.n]={};
+      DB.initcheck[item.n].result='Not possible';
+      const s=document.querySelector('#ii-'+item.n+' .rs');
+      const nm=document.getElementById('cin-'+item.n);
+      updateNum(nm,'Not possible',item.n);
+      if(s){s.className='rs skip';s.value='Not possible';s.disabled=true;}
+      const inp=document.querySelector('#ii-'+item.n+' input[type=text]');
+      if(inp)inp.disabled=true;
+    });
+    showToast(lang==='en'
+      ?'Wi-Fi failed — all other items set to Not possible'
+      :'WLAN fehlgeschlagen — alle weiteren Punkte auf Nicht möglich gesetzt');
+  } else if(n===1&&val==='Passed'){
+    // Re-enable all if WLAN passes
+    const items=getItems(lang).filter(i=>i.n&&i.n>1);
+    items.forEach(item=>{
+      const s=document.querySelector('#ii-'+item.n+' .rs');
+      const inp=document.querySelector('#ii-'+item.n+' input[type=text]');
+      if(s)s.disabled=false;
+      if(inp)inp.disabled=false;
+    });
+  }
   dbSave();updateProgress();
 }
 
@@ -839,21 +942,29 @@ function renderSurvList(){
     const saved=DB.survey[item.n]||'';
     const div=document.createElement('div');
     div.className='card';div.style.marginBottom='.5rem';
+    const starHtml = (n, saved) => `
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        ${[1,2,3,4,5,6].map(v=>`
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div class="sstar${saved==v?' on':''}" data-q="${n}" data-v="${v}" onclick="starClick(this)">
+              ${v<=(+saved||0)?'★':'☆'}
+            </div>
+            <span style="font-size:9px;font-weight:700;color:var(--muted)">${v}</span>
+          </div>`).join('')}
+        <span style="margin-left:4px;font-size:22px;color:#FFB300">
+          ${saved?'★'.repeat(+saved)+'☆'.repeat(6-+saved):''}
+        </span>
+      </div>`;
+    const savedText = DB.survey['t_'+item.n] || '';
     if(item.tp==='r'){
+      div.innerHTML=`<div class="sq">${item.n}. ${item.q}</div>${starHtml(item.n, saved)}`;
+    } else if(item.tp==='rt'){
       div.innerHTML=`<div class="sq">${item.n}. ${item.q}</div>
-        <div style="display:flex;gap:6px;align-items:center">
-          ${[1,2,3,4,5].map(v=>`
-            <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-              <div class="sstar${saved==v?' on':''}" data-q="${item.n}" data-v="${v}" onclick="starClick(this)">
-                ${v<=(+saved||0)?'★':'☆'}
-              </div>
-              <span style="font-size:9px;font-weight:700;color:var(--muted)">${v}</span>
-            </div>`).join('')}
-          <span style="margin-left:4px;font-size:22px;color:#FFB300">
-            ${saved?'★'.repeat(+saved)+'☆'.repeat(5-+saved):''}
-          </span>
-        </div>`;
-    }else{
+        ${starHtml(item.n, saved)}
+        <textarea onchange="saveSIText(${item.n},this.value)"
+          placeholder="${item.hint||t('ans_ph')}"
+          style="min-height:52px;margin-top:8px">${savedText}</textarea>`;
+    } else {
       div.innerHTML=`<label class="fl">${item.n}. ${item.q}</label>
         <textarea onchange="saveSI(${item.n},this.value)" placeholder="${t('ans_ph')}"
           style="min-height:60px">${saved}</textarea>`;
@@ -872,6 +983,7 @@ function starClick(el){
 }
 
 function saveSI(n,val){DB.survey[n]=val;dbSave();updateProgress();}
+function saveSIText(n,val){DB.survey['t_'+n]=val;dbSave();}
 
 function saveSurv(){
   dbSave();toast(t('t_surv_ok'));
@@ -970,7 +1082,8 @@ function gr(name){const el=document.querySelector(`[name="${name}"]:checked`);re
 function set(id,prop,val){const el=document.getElementById(id);if(el)el[prop]=val;}
 function hide(id){const el=document.getElementById(id);if(el)el.style.display='none';}
 function setSdot(state){const el=document.getElementById('sdot');if(el)el.className='sdot '+state;}
-function toast(msg){
+function toast(msg){showToast(msg);}
+function showToast(msg){
   const el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),2800);
