@@ -285,7 +285,7 @@ textarea{resize:vertical;min-height:70px}
         <input type="text" id="ci-cam" placeholder="Marke, Modell"/>
       </div>
       <div>
-        <label class="fl"><span id="tl-ci-bat">Verwendete Batterien Sensor</span></label>
+        <label class="fl"><span id="tl-ci-bat">Batterien Sensor</span></label>
         <input type="text" id="ci-bat" placeholder="z.B. Eneloop AA"/>
       </div>
     </div>
@@ -318,9 +318,9 @@ textarea{resize:vertical;min-height:70px}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <span style="font-weight:600" id="tl-ci-ok">Alles OK?</span>
       <div class="seg" style="width:auto;gap:3px">
-        <input type="radio" name="ok" id="ok-y" value="Yes"/><label for="ok-y" style="padding:7px 12px" id="lbl-yes">✓ Ja</label>
-        <input type="radio" name="ok" id="ok-p" value="Partly"/><label for="ok-p" style="padding:7px 12px" id="lbl-partly">~ Teils</label>
-        <input type="radio" name="ok" id="ok-n" value="No"/><label for="ok-n" style="padding:7px 12px" id="lbl-no">✗ Nein</label>
+        <input type="radio" name="ok" id="ok-y" value="Yes" onclick="toggleOkRemark(this.value)"/><label for="ok-y" style="padding:7px 12px" id="lbl-yes">✓ Ja</label>
+        <input type="radio" name="ok" id="ok-p" value="Partly" onclick="toggleOkRemark(this.value)"/><label for="ok-p" style="padding:7px 12px" id="lbl-partly">~ Teils</label>
+        <input type="radio" name="ok" id="ok-n" value="No" onclick="toggleOkRemark(this.value)"/><label for="ok-n" style="padding:7px 12px" id="lbl-no">✗ Nein</label>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -425,7 +425,7 @@ const TX = {
     new_ci:'Neuer Check-in', ci_hist:'Check-in Verlauf',
     ci_date:'Datum', ci_period:'Einsatz-Zeitraum', ci_cam:'Kamera eingesetzt',
     ci_op:'Betriebsmodus', ci_cap:'Aufnahmemodus',
-    ci_bat:'Batteries used in Sensor', ci_trg:'Auslösungen Total', ci_fls:'Fehlauslösungen',
+    ci_bat:'Batteries Sensor', ci_trg:'Auslösungen Total', ci_fls:'Fehlauslösungen',
     ci_ok:'Alles OK?', ci_bug:'Bug / Fehler?', ci_rat:'Bewertung', ci_notes:'Bemerkungen / Feedback',
     lbl_day:'Tag', lbl_night:'Nacht', lbl_mix:'Mix',
     lbl_yes:'✓ Ja', lbl_partly:'~ Teils', lbl_no:'✗ Nein',
@@ -467,7 +467,7 @@ const TX = {
     new_ci:'New Check-in', ci_hist:'Check-in History',
     ci_date:'Date', ci_period:'Usage Period', ci_cam:'Camera Used',
     ci_op:'Operation Mode', ci_cap:'Capture Mode',
-    ci_bat:'Batteries used in Sensor', ci_bat_hint:'Camera batteries do not need to be entered.', ci_trg:'Total Triggers', ci_fls:'False Triggers',
+    ci_bat:'Batteries Sensor', ci_bat_hint:'Camera batteries do not need to be entered.', ci_trg:'Total Triggers', ci_fls:'False Triggers',
     ci_ok:'All OK?', ci_bug:'Bug / Error?', ci_rat:'Rating', ci_notes:'Notes / Feedback',
     lbl_day:'Day', lbl_night:'Night', lbl_mix:'Mix',
     lbl_yes:'✓ Yes', lbl_partly:'~ Partly', lbl_no:'✗ No',
@@ -610,8 +610,8 @@ function getSurv(lang){
              :'Wie wichtig ist dir die Dämmerungs-Erkennung (Dusk/Dawn)?', tp:'r'},
 
     {s:e?'PROTECTION & EXTRAS':'SCHUTZFUNKTIONEN & EXTRAS'},
-    {n:10,q:e?'How important is the Environmental Failsafe (protects against continuous triggering by wind/insects/rain)?'
-             :'Wie wichtig ist dir der Environmental Failsafe (Schutz vor Dauerauslösung durch Wind/Insekten/Regen)?', tp:'r'},
+    {n:10,q:e?'How important is the Environmental Failsafe (Wind/Heat)?'
+             :'Wie wichtig ist dir der Environmental Failsafe (Wind/Wärme)?', tp:'r'},
     {n:11,q:e?'How important is the Walk Test mode for positioning the sensor?'
              :'Wie wichtig ist dir der Walk-Test-Modus zur Positionierung des Sensors?', tp:'r'},
     {n:12,q:e?'How important is the Wake-Up function (waking camera/flash from standby before trigger)?'
@@ -865,26 +865,41 @@ function setTodayDate(){
   if(el&&!el.value)el.value=new Date().toLocaleDateString('de-CH');
 }
 
+function toggleOkRemark(val){
+  const wrap=document.getElementById('ci-ok-remark-wrap');
+  const lbl=document.getElementById('tl-ci-ok-remark');
+  if(val==='Partly'||val==='No'){
+    wrap.style.display='block';
+    lbl.textContent=lang==='en'?'What is not OK? Please describe:':'Was ist nicht OK? Bitte beschreiben:';
+  } else {
+    wrap.style.display='none';
+  }
+}
+
 function saveCi(){
   const date=gv('ci-date');
   if(!date){toast(t('t_no_date'));return;}
   const ci={id:Date.now(),date,period:gv('ci-period'),camera:gv('ci-cam'),battery:gv('ci-bat'),
     opmode:gr('op'),capmode:gr('cap'),triggers:gv('ci-trg'),falseTriggers:gv('ci-fls'),
-    ok:gr('ok'),bug:gr('bug'),rating:gr('rat'),notes:gv('ci-notes'),
+    ok:gr('ok'),okRemark:gv('ci-ok-remark'),bug:gr('bug'),rating:gr('rat'),notes:gv('ci-notes'),
     ts:new Date().toISOString()};
   DB.checkins.unshift(ci);
   dbSave();resetCiForm();renderCiHist();updateProgress();checkOverdue();
   toast(t('btn_ci').replace('Save ','').replace('Speichern','')+'✓');
   dirty=true;
+  // Auto-sync if Sheet URL configured
+  const url=DB.profil.sheetUrl||PRESET_URL;
+  if(url&&DB.profil.sensor)syncToSheet();
 }
 
 function resetCiForm(){
-  ['ci-date','ci-period','ci-cam','ci-bat','ci-trg','ci-fls','ci-notes'].forEach(id=>{
+  ['ci-date','ci-period','ci-cam','ci-bat','ci-trg','ci-fls','ci-ok-remark','ci-notes'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   document.querySelectorAll('[name=op],[name=cap],[name=ok],[name=bug],[name=rat]')
     .forEach(el=>el.checked=false);
   setTodayDate();
+  const w=document.getElementById('ci-ok-remark-wrap');if(w)w.style.display='none';
 }
 
 function renderCiHist(){
@@ -918,6 +933,7 @@ function renderCiHist(){
         ${ci.ok?`<span class="chip ${okCls}">${okLbl}</span>`:''}
         ${hasBug?`<span class="chip nok">${t('chip_bug')}</span>`:''}
       </div>
+      ${ci.okRemark?`<p style="font-size:12px;color:var(--warn);font-weight:600">⚠ ${ci.okRemark}</p>`:''}
       ${ci.notes?`<p style="font-size:12px;color:var(--muted)">${ci.notes}</p>`:''}
       <button class="sdel" onclick="delCi(${ci.id})">${t('del_btn')}</button>
     </div>`;
